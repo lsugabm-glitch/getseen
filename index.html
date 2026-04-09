@@ -517,13 +517,10 @@ ${answerLabels}
 Generate the full report now. Return only valid JSON.`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/generate', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
@@ -532,6 +529,27 @@ Generate the full report now. Return only valid JSON.`;
         messages: [{ role: 'user', content: userMessage }]
       })
     });
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const raw = data.content.map(c=>c.text||'').join('');
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const r = JSON.parse(clean);
+
+    clearTimeout(loadingTimer);
+    renderResult(r);
+
+  } catch(err) {
+    clearTimeout(loadingTimer);
+    document.getElementById('error-msg').textContent =
+      'Terjadi kesalahan: ' + err.message;
+    showPage('error');
+    console.error(err);
+  }
 
     if (!res.ok) {
       const err = await res.json().catch(()=>({}));
