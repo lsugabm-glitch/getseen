@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetSeen — Ada Pertanyaan yang Belum Pernah Kamu Jawab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:           #FDFAF4;
+      --bg2:          #F5EFE0;
+      --text:         #1C1510;
+      --text2:        #6B5A48;
+      --text3:        #9C8A77;
+      --accent:       #D97706;
+      --accent-light: #FEF3C7;
+      --accent-dark:  #92400E;
+      --border:       #E8D9C4;
+      --card:         #FFFFFF;
+      --green:        #16A34A;
+      --green-light:  #DCFCE7;
+      --r:            14px;
+      --r-lg:         20px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: block; }
+    #page-generating.active, #page-error.active { display: flex; }
+
+    .logo { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--text); letter-spacing: -0.3px; }
+    .logo span { color: var(--accent); }
+    nav { padding: 18px 20px; max-width: 480px; margin: 0 auto; }
+    .divider { height: 1px; background: var(--border); }
+    .section { padding: 36px 20px; max-width: 480px; margin: 0 auto; }
+    .section-label { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px; }
+    .section h2 { font-family: 'Instrument Serif', serif; font-size: 24px; color: var(--text); margin-bottom: 22px; line-height: 1.35; }
+    .btn-main { display: block; width: 100%; padding: 16px 24px; background: var(--accent); color: white; border: none; border-radius: var(--r); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-bottom: 10px; }
+    .btn-main:hover { background: var(--accent-dark); }
+    .btn-note { font-size: 13px; color: var(--text3); text-align: center; }
+    .check { color: var(--accent); font-weight: 700; flex-shrink: 0; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: var(--bg); padding: 12px 22px; border-radius: 99px; font-size: 14px; font-weight: 500; transition: transform 0.3s; z-index: 100; white-space: nowrap; pointer-events: none; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* LANDING */
+    .hero { padding: 32px 20px 36px; text-align: center; max-width: 480px; margin: 0 auto; }
+    .hero h1 { font-family: 'Instrument Serif', serif; font-size: 30px; line-height: 1.3; color: var(--text); margin-bottom: 16px; letter-spacing: -0.3px; }
+    .hero h1 em { font-style: italic; color: var(--accent-dark); }
+    .hero p { font-size: 16px; color: var(--text2); margin-bottom: 28px; line-height: 1.75; }
+    .trust { background: var(--bg2); padding: 14px 20px; text-align: center; font-size: 14px; color: var(--text2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .trust strong { color: var(--text); }
+    .discover-list { display: flex; flex-direction: column; gap: 12px; }
+    .discover-item { display: flex; gap: 14px; align-items: flex-start; padding: 16px; background: var(--card); border: 1px solid var(--border); border-radius: var(--r); }
+    .discover-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+    .discover-text h3 { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .discover-text p { font-size: 14px; color: var(--text2); line-height: 1.55; }
+    .sample-wrap { position: relative; overflow: hidden; border-radius: var(--r-lg); border: 1px solid var(--border); }
+    .sample-inner { padding: 20px; background: var(--card); filter: blur(3.5px); user-select: none; pointer-events: none; }
+    .sample-inner p { font-size: 14px; color: var(--text2); margin-bottom: 10px; line-height: 1.7; }
+    .sample-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.97) 45%); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 20px; }
+    .sample-label { font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 12px; }
+    .steps { display: flex; flex-direction: column; }
+    .step { display: flex; gap: 16px; align-items: flex-start; padding: 18px 0; border-bottom: 1px solid var(--border); }
+    .step:last-child { border-bottom: none; }
+    .step-num { width: 32px; height: 32px; background: var(--accent-light); color: var(--accent-dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+    .step-content h3 { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .step-content p { font-size: 14px; color: var(--text2); line-height: 1.6; }
+    .testi-list { display: flex; flex-direction: column; gap: 12px; }
+    .testi { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; }
+    .testi-quote { font-size: 14px; color: var(--text); line-height: 1.7; font-style: italic; margin-bottom: 10px; }
+    .testi-name { font-size: 12px; color: var(--text3); font-weight: 600; }
+    footer { padding: 36px 20px; text-align: center; font-size: 13px; color: var(--text3); border-top: 1px solid var(--border); max-width: 480px; margin: 0 auto; }
+
+    /* QUIZ */
+    .quiz-header { padding: 16px 20px 0; max-width: 480px; margin: 0 auto; }
+    .quiz-back { font-size: 14px; color: var(--text2); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 16px; }
+    .quiz-back:hover { color: var(--text); }
+    .progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 32px; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
+    .quiz-question { display: none; max-width: 480px; margin: 0 auto; padding: 0 20px 40px; }
+    .quiz-question.active { display: block; }
+    .q-num { font-size: 12px; color: var(--text3); font-weight: 500; margin-bottom: 8px; }
+    .q-text { font-family: 'Instrument Serif', serif; font-size: 22px; line-height: 1.4; color: var(--text); margin-bottom: 22px; }
+    .q-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .q-option { padding: 15px 18px; border: 1.5px solid var(--border); border-radius: var(--r); font-size: 15px; color: var(--text2); cursor: pointer; transition: all 0.15s; line-height: 1.5; background: var(--card); text-align: left; font-family: 'Plus Jakarta Sans', sans-serif; width: 100%; }
+    .q-option:hover { border-color: var(--accent); color: var(--text); background: var(--accent-light); }
+    .q-option.selected { border-color: var(--accent); background: var(--accent-light); color: var(--text); font-weight: 500; }
+    .btn-next { display: block; width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: var(--r); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-next:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; }
+    .btn-next:not(:disabled):hover { background: var(--accent-dark); }
+
+    /* CHECKOUT */
+    .page-header { padding: 18px 20px; border-bottom: 1px solid var(--border); max-width: 480px; margin: 0 auto; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; display: block; }
+    .form-label span { font-weight: 400; color: var(--text3); font-size: 13px; }
+    .form-input { width: 100%; padding: 13px 16px; border: 1.5px solid var(--border); border-radius: var(--r); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; color: var(--text); background: var(--card); outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input::placeholder { color: var(--text3); }
+    .form-hint { font-size: 12px; color: var(--text3); margin-top: 5px; }
+    .checkout-info { background: var(--accent-light); border: 1px solid #FDE68A; border-radius: var(--r); padding: 14px 16px; margin-bottom: 20px; font-size: 13px; color: var(--accent-dark); line-height: 1.7; }
+
+    /* GENERATING */
+    #page-generating { align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 40px 20px; gap: 0; }
+    .gen-icon { font-size: 48px; margin-bottom: 22px; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.08);opacity:0.75} }
+    .gen-title { font-family: 'Instrument Serif', serif; font-size: 24px; color: var(--text); margin-bottom: 8px; }
+    .gen-sub { font-size: 15px; color: var(--text2); margin-bottom: 28px; }
+    .gen-steps { text-align: left; background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 20px; max-width: 340px; width: 100%; }
+    .gen-step { font-size: 14px; color: var(--text3); padding: 6px 0; transition: color 0.3s; display: flex; align-items: center; gap: 10px; }
+    .gen-step.done { color: var(--text2); }
+    .gs-icon { font-size: 13px; width: 14px; }
+
+    /* ERROR */
+    #page-error { align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 40px 20px; }
+    .error-icon { font-size: 48px; margin-bottom: 16px; }
+    .error-title { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--text); margin-bottom: 8px; }
+    .error-msg { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.65; max-width: 320px; }
+    .btn-retry { padding: 13px 28px; background: var(--accent); color: white; border: none; border-radius: var(--r); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+    /* RESULT */
+    #page-result { padding-bottom: 60px; }
+    .result-header { background: var(--bg2); padding: 16px 20px; border-bottom: 1px solid var(--border); text-align: center; }
+    .result-tagline { font-size: 13px; color: var(--text2); margin-top: 4px; }
+    .result-trial-note { background: var(--green-light); border: 1px solid #86efac; border-radius: var(--r); padding: 12px 16px; margin: 16px 20px 0; max-width: 440px; margin-left: auto; margin-right: auto; font-size: 13px; color: #15803d; line-height: 1.6; text-align: center; }
+    .result-section { max-width: 480px; margin: 0 auto; padding: 16px 20px 0; }
+    .result-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; margin-bottom: 12px; }
+    .result-card-header { background: var(--bg2); padding: 10px 18px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; }
+    .result-card-body { padding: 18px; }
+    .result-text { font-size: 15px; line-height: 1.8; color: var(--text); }
+    .proof-figure { font-size: 11px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .share-card { background: var(--accent-light); border: 1.5px solid #FDE68A; border-radius: var(--r-lg); padding: 20px; margin-bottom: 10px; }
+    .share-quote { font-family: 'Instrument Serif', serif; font-size: 18px; line-height: 1.55; color: var(--accent-dark); margin-bottom: 14px; font-style: italic; }
+    .share-footer { display: flex; align-items: center; justify-content: space-between; }
+    .share-brand { font-size: 12px; color: var(--accent-dark); font-weight: 600; opacity: 0.65; }
+    .btn-share { background: white; border: 1px solid #FDE68A; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(--accent-dark); cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.2s; }
+    .btn-share:hover { background: var(--accent); color: white; border-color: var(--accent); }
+    .share-hint { font-size: 12px; color: var(--text3); text-align: center; margin-bottom: 18px; }
+    .result-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+    .result-divider-line { flex: 1; height: 1px; background: var(--border); }
+    .result-divider-label { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+    .week-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; margin-bottom: 10px; }
+    .week-title { font-size: 12px; font-weight: 700; color: var(--accent-dark); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .week-action { font-size: 14px; color: var(--text2); line-height: 1.65; }
+    .restart-link { text-align: center; padding: 24px 0 0; font-size: 14px; color: var(--text3); cursor: pointer; display: block; }
+    .restart-link:hover { color: var(--text2); }
+  </style>
+</head>
+<body>
+
+<div class="toast" id="toast">✓ Tersalin!</div>
+
+<!-- ════════════════════
+     LANDING
+════════════════════ -->
+<div class="page active" id="page-landing">
+  <nav><div class="logo">get<span>seen</span></div></nav>
+
+  <div class="hero">
+    <h1>Semuanya berjalan normal. Tapi diam-diam kamu sering bertanya — <em>'apa cuma ini?'</em></h1>
+    <p>Bukan karena tidak bersyukur. Tapi karena jauh di dalam, kamu tahu ada sesuatu tentang diri kamu yang belum pernah benar-benar kamu temukan.</p>
+    <button class="btn-main" onclick="startQuiz()">Temukan Jawabannya →</button>
+    <div class="btn-note">10 pertanyaan · laporan personal · langsung kamu baca</div>
+  </div>
+
+  <div class="trust">
+    Sudah <strong>1.243 laporan</strong> dikirimkan — banyak yang bilang ini pertama kalinya mereka merasa benar-benar dipahami
+  </div>
+
+  <div class="section">
+    <div class="section-label">Yang akan kamu temukan</div>
+    <h2>Bukan label. Bukan kategori. Cermin yang jujur.</h2>
+    <div class="discover-list">
+      <div class="discover-item">
+        <div class="discover-icon">🪞</div>
+        <div class="discover-text">
+          <h3>Apa yang sebenarnya terjadi</h3>
+          <p>Pola tersembunyi yang selama ini membentuk keputusan dan perasaan kamu — yang mungkin belum pernah ada yang menamai dengan tepat.</p>
+        </div>
+      </div>
+      <div class="discover-item">
+        <div class="discover-icon">🧩</div>
+        <div class="discover-text">
+          <h3>Kenapa pola itu terbentuk</h3>
+          <p>Bukan menghakimi — tapi menjelaskan. Membuat kamu akhirnya mengerti kenapa kamu bereaksi seperti itu selama ini.</p>
+        </div>
+      </div>
+      <div class="discover-item">
+        <div class="discover-icon">🗺️</div>
+        <div class="discover-text">
+          <h3>Peta Hidup 30 Hari</h3>
+          <p>Langkah konkret yang bisa langsung dimulai — spesifik untuk kamu, bukan template umum.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">Contoh laporan</div>
+    <h2>Seperti ini — tapi milik kamu jauh lebih personal.</h2>
+    <div class="sample-wrap">
+      <div class="sample-inner">
+        <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9C8A77;margin-bottom:10px;">Cermin kamu</p>
+        <p>Ada sesuatu yang ingin kamu ubah dalam hidup — dan kamu sudah tahu apa itu. Bukan karena tidak punya kemampuan. Tapi setiap kali mau mulai, rasanya berat. Seperti ada tembok tidak kasat mata antara kamu dan langkah pertama itu.</p>
+        <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9C8A77;margin:14px 0 10px;">Kenapa ini terjadi</p>
+        <p>Tembok itu biasanya bukan dari luar. Dari cara berpikir yang sudah terlalu lama berjalan — bahwa perubahan butuh kondisi yang pas...</p>
+      </div>
+      <div class="sample-overlay">
+        <div class="sample-label">Jawab 10 pertanyaan untuk lihat laporan kamu yang sebenarnya</div>
+        <button class="btn-main" style="max-width:280px;" onclick="startQuiz()">Mulai Sekarang →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">Cara kerja</div>
+    <h2>Singkat. Jujur. Langsung kamu baca.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Jawab 10 pertanyaan</h3>
+          <p>Jujur saja — pilih yang paling menggambarkan kamu sekarang, bukan yang terlihat paling baik.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Laporan disiapkan khusus untukmu</h3>
+          <p>Setiap laporan dibuat berdasarkan kombinasi jawaban kamu — tidak ada dua laporan yang sama.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Baca cermin dan peta hidupmu</h3>
+          <p>Langsung muncul di layar. Simpan, screenshot, atau bagikan ke orang yang kamu percaya.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">Cerita mereka</div>
+    <h2>Yang mereka katakan setelah membaca laporan.</h2>
+    <div class="testi-list">
+      <div class="testi">
+        <div class="testi-quote">"Gue kira gue baik-baik aja. Ternyata ada satu kalimat yang bikin gue diam lama banget. Beneran ngerasa dilihat."</div>
+        <div class="testi-name">Rudi, 28 tahun — Surabaya</div>
+      </div>
+      <div class="testi">
+        <div class="testi-quote">"Rasanya seperti ada yang benar-benar memperhatikan jawaban saya satu per satu. Tidak terasa generik sama sekali."</div>
+        <div class="testi-name">Wulan, 34 tahun — Bekasi</div>
+      </div>
+      <div class="testi">
+        <div class="testi-quote">"Kalimat terakhirnya saya langsung screenshot dan kirim ke istri. Katanya, 'iya bener banget itu kamu.'"</div>
+        <div class="testi-name">Fajar, 31 tahun — Medan</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div style="display:flex;justify-content:center;margin-bottom:10px;"><div class="logo">get<span>seen</span></div></div>
+    <div style="line-height:1.75;">Dibuat untuk semua orang yang pernah diam-diam bertanya,<br><em>"seharusnya hidup aku bisa lebih dari ini."</em></div>
+    <div style="margin-top:14px;font-size:12px;">getseen.co &nbsp;·&nbsp; 2026</div>
+  </footer>
+</div>
+
+<!-- ════════════════════
+     QUIZ
+════════════════════ -->
+<div class="page" id="page-quiz">
+  <div class="quiz-header">
+    <div class="quiz-back" onclick="showPage('landing')">← Kembali</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
+  </div>
+  <div id="quiz-container"></div>
+</div>
+
+<!-- ════════════════════
+     CHECKOUT
+════════════════════ -->
+<div class="page" id="page-checkout">
+  <div class="page-header"><div class="logo">get<span>seen</span></div></div>
+  <div class="section" style="padding-top:24px;">
+    <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Langkah terakhir</div>
+    <div style="font-family:'Instrument Serif',serif;font-size:24px;color:var(--text);margin-bottom:20px;line-height:1.3;">Siapa yang akan membaca laporan ini?</div>
+
+    <div class="checkout-info">
+      Laporan kamu akan muncul langsung setelah ini. Kami juga akan kirimkan salinannya ke WhatsApp kamu setelah fase uji coba selesai.
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="inp-name">Nama kamu</label>
+      <input class="form-input" id="inp-name" type="text" placeholder="Nama lengkap" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="inp-wa">Nomor WhatsApp <span>* wajib</span></label>
+      <input class="form-input" id="inp-wa" type="tel" placeholder="08xxxxxxxxxx" autocomplete="tel">
+      <div class="form-hint">Untuk pengiriman salinan laporan</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="inp-email">Email <span>(opsional)</span></label>
+      <input class="form-input" id="inp-email" type="email" placeholder="email@kamu.com" autocomplete="email">
+    </div>
+
+    <button class="btn-main" onclick="generateResult()">Lihat Laporan Kamu →</button>
+    <div class="btn-note">Laporan muncul langsung di layar ini</div>
+  </div>
+</div>
+
+<!-- ════════════════════
+     GENERATING
+════════════════════ -->
+<div class="page" id="page-generating">
+  <div class="gen-icon">🔍</div>
+  <div class="gen-title">Laporan sedang disiapkan...</div>
+  <div class="gen-sub">Sebentar ya, ini butuh waktu sejenak</div>
+  <div class="gen-steps">
+    <div class="gen-step" id="gs-1"><span class="gs-icon">○</span> Membaca pola dari jawabanmu...</div>
+    <div class="gen-step" id="gs-2"><span class="gs-icon">○</span> Mencari apa yang selama ini menghalangi...</div>
+    <div class="gen-step" id="gs-3"><span class="gs-icon">○</span> Menyusun Peta Hidup 30 Hari untukmu...</div>
+  </div>
+</div>
+
+<!-- ════════════════════
+     ERROR
+════════════════════ -->
+<div class="page" id="page-error">
+  <div class="error-icon">⚠️</div>
+  <div class="error-title">Ada yang tidak beres</div>
+  <div class="error-msg" id="error-msg">Terjadi kesalahan saat menyiapkan laporanmu. Coba lagi sebentar.</div>
+  <button class="btn-retry" onclick="showPage('checkout')">← Coba Lagi</button>
+</div>
+
+<!-- ════════════════════
+     RESULT
+════════════════════ -->
+<div class="page" id="page-result">
+  <div class="result-header">
+    <div class="logo">get<span>seen</span></div>
+    <div class="result-tagline">Laporan kamu ✦</div>
+  </div>
+  <div class="result-trial-note">
+    Ini adalah laporan kamu yang sesungguhnya — disiapkan khusus berdasarkan jawabanmu. Salinannya akan dikirim ke WhatsApp kamu setelah fase uji coba selesai.
+  </div>
+  <div class="result-section" id="result-content"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// !! GANTI API KEY INI SEBELUM DEPLOY !!
+// Rotate key setelah testing selesai
+// ══════════════════════════════════════════════════
+const API_KEY = 'GANTI_DENGAN_API_KEY_KAMU';
+
+const SYSTEM_PROMPT = `You are GetSeen — a service that gives people the most honest self-reflection they have ever received.
+
+Read 10 answers from a user and generate a deeply personal result covering both the Mirror (cermin) and Life Map (peta hidup 30 hari).
+
+CRITICAL RULES — NEVER BREAK THESE:
+1. NEVER use labels, types, categories, or archetypes. Never say "you are the type of person who..."
+2. NEVER reference the answer options or question numbers. The user must feel you know them.
+3. NEVER be generic. Every sentence must feel like it could only be written for this specific person.
+4. NEVER be clinical or therapeutic. Write like a wise, perceptive close friend.
+5. ALWAYS use "kamu" for Indonesian users — NEVER "lo" or "gue" (too regional).
+6. ALWAYS find the tension in their answers. That tension IS the mirror.
+7. NEVER use these words: mindset, growth journey, potential, empower, authentic, hustle, grind, pivot, self-love, toxic, healing, trauma, manifest, universe, energy.
+8. Do NOT start any sentence with "Kamu adalah..." or "As someone who..."
+
+LANGUAGE: Indonesia → Bahasa Indonesia, warm, direct, like a message from a close friend. Elsewhere → English, same tone. Simple everyday words. No jargon.
+
+THE QUESTIONS (for context):
+Q1: Current life phase (stuck/moving but lost/coasting/feeling left behind)
+Q2: Money behavior (save/invest/spend on dreams/give to others)
+Q3: How others rely on them (listener/problem-solver/entertainer/strategist)
+Q4: Stress response (withdraw/talk/solve/distract)
+Q5: What causes procrastination (fear of failure/don't know where to start/low energy/feel unworthy)
+Q6: What makes them proudest (helping others/hitting own targets/being recognized/surviving alone)
+Q7: Most recurring thought (nanti/can't/already behind/at least I tried)
+Q8: How they want to feel in 3 years (financially free/clear direction/recognized/at peace)
+Q9: Biggest obstacle (own habits/environment/lack of resources/lack of skills)
+Q10: Film scene they're in (opening/plot twist/turning point/climax)
+
+FIGURE SELECTION — match dominant pattern to user location:
+Fear of starting/perfectionism → Indonesia: Bob Sadino | USA/UK: J.K. Rowling | India: A.R. Rahman
+Feeling left behind → Indonesia: BJ Habibie | USA: Michael Jordan | Global: BJ Habibie
+Waiting for right moment → Indonesia: Susi Pudjiastuti | USA/Global: Colonel Sanders
+Underestimating own strength → Indonesia: Raisa | USA/Global: Oprah Winfrey
+Environment holding back → Indonesia: Andrea Hirata | USA: LeBron James
+Paralysis by analysis → Universal: Thomas Edison
+
+OUTPUT FORMAT — return ONLY valid raw JSON. No preamble. No markdown. No code blocks. Just JSON.
+
+{
+  "mirror": "2-3 sentences. The uncomfortable truth from the tension in their answers. Must make them stop and say 'this is exactly me.'",
+  "why": "2-3 sentences. The root cause behind the pattern. Should feel like 'oh, so that is why.'",
+  "proof": {
+    "figure": "Full name of the chosen figure",
+    "story": "3-4 sentences. A specific real moment from this person's life that mirrors the user's dominant pattern. End with what they did differently."
+  },
+  "strength": "1-2 sentences. Something they genuinely have that they are underestimating. Must connect to at least one of their answers.",
+  "shareable": "Exactly 1 sentence. Under 20 words. A truth that flips an assumption they have been living by. Must hit hard.",
+  "focus": "1-2 sentences. The single most important direction for this month. Not a goal — a direction.",
+  "week1": { "title": "3-4 words max", "action": "2-3 sentences. One specific small action. Almost embarrassingly easy. That is the point." },
+  "week2_3": { "title": "3-4 words max", "action": "2-3 sentences. Building rhythm. Slightly more than Week 1 but still manageable." },
+  "week4": { "title": "3-4 words max", "action": "2-3 sentences. One real step toward the actual goal. Not a plan — an action." },
+  "stop_this": "2-3 sentences. One habit to stop immediately. Must connect directly to Q7 or Q9 answer. Not generic.",
+  "you_have_this": "2-3 sentences. A strength they use for everyone else but not for themselves. Must reference Q3 answer. End with a sentence that says this is available for them too."
+}`;
+
+// ══════════════════
+// STATE
+// ══════════════════
+const QUESTIONS = [
+  { q: "Sekarang, kamu lagi ada di fase hidup yang mana?", opts: ["Semangat tapi bingung mau ke mana","Stuck dan ingin berubah, tapi tidak tahu mulainya dari mana","Jalan santai — stabil, yang penting aman","Merasa tertinggal, tapi tidak tahu tertinggal dari apa"] },
+  { q: "Kalau tiba-tiba dapat uang Rp 5 juta besok, kamu akan lakukan apa duluan?", opts: ["Bayar utang atau tabung dulu","Invest atau coba mulai usaha","Belikan sesuatu yang sudah lama kamu inginkan","Bagikan ke orang yang kamu sayangi"] },
+  { q: "Orang-orang terdekat kamu paling sering minta bantuan kamu untuk apa?", opts: ["Dengerin cerita dan kasih pendapat","Beresin masalah yang praktis","Bikin suasana lebih seru","Bantu mikir rencana dan strategi"] },
+  { q: "Waktu lagi stres berat, biasanya kamu...", opts: ["Diam dan proses sendiri dulu","Cari orang untuk diajak bicara","Langsung cari solusinya","Alihkan pikiran — HP, makan, tidur"] },
+  { q: "Hal yang paling sering bikin kamu nunda-nunda sesuatu?", opts: ["Takut salah atau hasilnya tidak sempurna","Tidak tahu harus mulai dari mana","Malas atau kurang energi","Merasa belum layak atau belum siap"] },
+  { q: "Kamu paling bangga sama diri sendiri waktu...", opts: ["Berhasil bantu orang lain","Capai target yang kamu set sendiri","Diakui dan dihargai orang lain","Survive situasi susah sendirian"] },
+  { q: "Kalimat mana yang paling sering muncul di kepala kamu?", opts: ['"Nanti saja deh..."','"Kayaknya aku tidak bisa..."','"Harusnya aku sudah lebih jauh dari ini"','"Yaudah, yang penting sudah usaha"'] },
+  { q: "Tiga tahun ke depan, kamu paling ingin merasakan apa?", opts: ["Bebas secara finansial","Punya tujuan hidup yang jelas","Diakui dan dihargai orang lain","Tenang dan bahagia"] },
+  { q: "Yang paling sering menghalangi kamu untuk maju?", opts: ["Kebiasaan diri sendiri yang susah diubah","Lingkungan dan orang-orang di sekitar","Kurang modal atau sumber daya","Kurang ilmu atau kemampuan"] },
+  { q: "Kalau hidup kamu adalah sebuah film, kamu sekarang lagi di scene mana?", opts: ["Awal cerita — baru sadar ada yang harus berubah","Plot twist — baru kena kejadian besar","Titik balik — sudah tahu arahnya, tinggal jalan","Klimaks — lagi berjuang keras menuju tujuan"] }
+];
+
+let answers = [], loadingTimer = null;
+let user = { name: '', wa: '', email: '' };
+
+// ══════════════════
+// NAV
+// ══════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ══════════════════
+// QUIZ
+// ══════════════════
+function startQuiz() {
+  answers = new Array(QUESTIONS.length).fill(null);
+  const c = document.getElementById('quiz-container');
+  c.innerHTML = '';
+  QUESTIONS.forEach((q, i) => {
+    const d = document.createElement('div');
+    d.className = 'quiz-question' + (i === 0 ? ' active' : '');
+    d.id = 'q' + i;
+    d.innerHTML = `
+      <div class="q-num">Pertanyaan ${i+1} dari ${QUESTIONS.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="q-options">
+        ${q.opts.map((o,oi)=>`<button class="q-option" onclick="pickOpt(${i},${oi},this)">${o}</button>`).join('')}
+      </div>
+      <button class="btn-next" id="bn${i}" disabled onclick="nextQ(${i})">
+        ${i===QUESTIONS.length-1?'Lanjut ke Laporan →':'Lanjut →'}
+      </button>`;
+    c.appendChild(d);
+  });
+  document.getElementById('progress-fill').style.width = '10%';
+  showPage('quiz');
+}
+
+function pickOpt(qi, oi, el) {
+  document.querySelectorAll('#q'+qi+' .q-option').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  answers[qi] = oi;
+  document.getElementById('bn'+qi).disabled = false;
+}
+
+function nextQ(qi) {
+  if (qi === QUESTIONS.length - 1) { showPage('checkout'); return; }
+  document.getElementById('q'+qi).classList.remove('active');
+  document.getElementById('q'+(qi+1)).classList.add('active');
+  document.getElementById('progress-fill').style.width = ((qi+2)/QUESTIONS.length*100)+'%';
+  window.scrollTo(0, 0);
+}
+
+// ══════════════════
+// GENERATE
+// ══════════════════
+async function generateResult() {
+  const wa = document.getElementById('inp-wa').value.trim();
+  if (!wa) {
+    alert('Mohon isi nomor WhatsApp kamu.');
+    document.getElementById('inp-wa').focus();
+    return;
+  }
+  user = { name: document.getElementById('inp-name').value.trim() || 'Kamu', wa, email: document.getElementById('inp-email').value.trim() };
+
+  showPage('generating');
+  animateLoader();
+
+  const answerLabels = answers.map((a, i) => {
+    const opt = (a !== null && QUESTIONS[i]) ? QUESTIONS[i].opts[a] : 'tidak dijawab';
+    return `Q${i+1}: ${opt}`;
+  }).join('\n');
+
+  const userMessage = `User name: ${user.name}
+User location: Indonesia
+Language: id
+
+Answers:
+${answerLabels}
+
+Generate the full report now. Return only valid JSON.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userMessage }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const raw = data.content.map(c=>c.text||'').join('');
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const r = JSON.parse(clean);
+
+    clearTimeout(loadingTimer);
+    renderResult(r);
+
+  } catch(err) {
+    clearTimeout(loadingTimer);
+    document.getElementById('error-msg').textContent =
+      err.message.includes('API_KEY') || err.message.includes('auth')
+        ? 'API key belum diisi atau tidak valid. Ganti API_KEY di kode.'
+        : 'Terjadi kesalahan: ' + err.message;
+    showPage('error');
+    console.error(err);
+  }
+}
+
+function animateLoader() {
+  const ids = ['gs-1','gs-2','gs-3'];
+  ids.forEach(id => { const el=document.getElementById(id); el.classList.remove('done'); el.querySelector('.gs-icon').textContent='○'; });
+  let i = 0;
+  function tick() {
+    if (i >= ids.length) return;
+    const el = document.getElementById(ids[i]);
+    el.classList.add('done');
+    el.querySelector('.gs-icon').textContent = '✓';
+    i++;
+    if (i < ids.length) loadingTimer = setTimeout(tick, 900);
+  }
+  loadingTimer = setTimeout(tick, 800);
+}
+
+// ══════════════════
+// RENDER RESULT
+// ══════════════════
+function renderResult(r) {
+  const sq = (r.shareable||'').replace(/'/g,"\\'");
+  document.getElementById('result-content').innerHTML = `
+
+    <div class="result-card">
+      <div class="result-card-header">Cermin kamu</div>
+      <div class="result-card-body"><div class="result-text">${r.mirror||''}</div></div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-card-header">Kenapa ini terjadi</div>
+      <div class="result-card-body"><div class="result-text">${r.why||''}</div></div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-card-header">Bukti bahwa pola ini bisa dipatahkan</div>
+      <div class="result-card-body">
+        <div class="proof-figure">${r.proof?.figure||''}</div>
+        <div class="result-text">${r.proof?.story||''}</div>
+      </div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-card-header">Yang kamu punya tapi belum kamu sadari</div>
+      <div class="result-card-body"><div class="result-text">${r.strength||''}</div></div>
+    </div>
+
+    <div class="share-card">
+      <div class="share-quote">"${r.shareable||''}"</div>
+      <div class="share-footer">
+        <div class="share-brand">getseen.co</div>
+        <button class="btn-share" onclick="doShare('${sq}')">📤 Bagikan</button>
+      </div>
+    </div>
+    <div class="share-hint">Screenshot & bagikan ke teman — biar mereka juga bisa coba</div>
+
+    <div class="result-divider">
+      <div class="result-divider-line"></div>
+      <div class="result-divider-label">Peta Hidup 30 Hari</div>
+      <div class="result-divider-line"></div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-card-header">Fokus utama bulan ini</div>
+      <div class="result-card-body"><div class="result-text">${r.focus||''}</div></div>
+    </div>
+
+    <div class="week-card">
+      <div class="week-title">Minggu 1 — ${r.week1?.title||''}</div>
+      <div class="week-action">${r.week1?.action||''}</div>
+    </div>
+    <div class="week-card">
+      <div class="week-title">Minggu 2–3 — ${r.week2_3?.title||''}</div>
+      <div class="week-action">${r.week2_3?.action||''}</div>
+    </div>
+    <div class="week-card">
+      <div class="week-title">Minggu 4 — ${r.week4?.title||''}</div>
+      <div class="week-action">${r.week4?.action||''}</div>
+    </div>
+
+    <div class="result-card" style="margin-top:8px;">
+      <div class="result-card-header">Satu hal yang perlu dihentikan sekarang</div>
+      <div class="result-card-body"><div class="result-text">${r.stop_this||''}</div></div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-card-header">Kekuatan yang sudah kamu punya — untuk dirimu sendiri</div>
+      <div class="result-card-body"><div class="result-text">${r.you_have_this||''}</div></div>
+    </div>
+
+    <div class="restart-link" onclick="showPage('landing')">← Mulai ulang dari awal</div>
+  `;
+  showPage('result');
+}
+
+function doShare(quote) {
+  const text = '"' + quote + '"\n\ngetseen.co';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(()=>showToast('✓ Tersalin!')).catch(()=>fallbackCopy(text));
+  } else { fallbackCopy(text); }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); showToast('✓ Tersalin!'); } catch(e){}
+  document.body.removeChild(ta);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (msg) t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
