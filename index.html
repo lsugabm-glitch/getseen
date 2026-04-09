@@ -497,7 +497,11 @@ async function generateResult() {
     document.getElementById('inp-wa').focus();
     return;
   }
-  user = { name: document.getElementById('inp-name').value.trim() || 'Kamu', wa, email: document.getElementById('inp-email').value.trim() };
+  user = {
+    name: document.getElementById('inp-name').value.trim() || 'Kamu',
+    wa,
+    email: document.getElementById('inp-email').value.trim()
+  };
 
   showPage('generating');
   animateLoader();
@@ -519,9 +523,7 @@ Generate the full report now. Return only valid JSON.`;
   try {
     const res = await fetch('/api/generate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
@@ -531,45 +533,21 @@ Generate the full report now. Return only valid JSON.`;
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(()=>({}));
+      const err = await res.json().catch(() => ({}));
       throw new Error(err.error?.message || `HTTP ${res.status}`);
     }
 
     const data = await res.json();
-    const raw = data.content.map(c=>c.text||'').join('');
-    const clean = raw.replace(/```json|```/g,'').trim();
+    const raw = data.content.map(c => c.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
     const r = JSON.parse(clean);
 
     clearTimeout(loadingTimer);
     renderResult(r);
 
-  } catch(err) {
+  } catch (err) {
     clearTimeout(loadingTimer);
-    document.getElementById('error-msg').textContent =
-      'Terjadi kesalahan: ' + err.message;
-    showPage('error');
-    console.error(err);
-  }
-
-    if (!res.ok) {
-      const err = await res.json().catch(()=>({}));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    const raw = data.content.map(c=>c.text||'').join('');
-    const clean = raw.replace(/```json|```/g,'').trim();
-    const r = JSON.parse(clean);
-
-    clearTimeout(loadingTimer);
-    renderResult(r);
-
-  } catch(err) {
-    clearTimeout(loadingTimer);
-    document.getElementById('error-msg').textContent =
-      err.message.includes('API_KEY') || err.message.includes('auth')
-        ? 'API key belum diisi atau tidak valid. Ganti API_KEY di kode.'
-        : 'Terjadi kesalahan: ' + err.message;
+    document.getElementById('error-msg').textContent = 'Terjadi kesalahan: ' + err.message;
     showPage('error');
     console.error(err);
   }
